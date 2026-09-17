@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: seatbond
+      POSTGRES_PASSWORD: seatbond
+      POSTGRES_DB: seatbond
+    ports: ["5442:5432"]
+    volumes: [seatbond_pg:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seatbond -d seatbond"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://seatbond:seatbond@db:5432/seatbond
+      SEED_ON_EMPTY: "true"
+    ports: ["9100:9100"]
+    depends_on:
+      db:
+        condition: service_healthy
+  frontend:
+    build: ./frontend
+    ports: ["4100:80"]
+    depends_on: [api]
+volumes:
+  seatbond_pg:
